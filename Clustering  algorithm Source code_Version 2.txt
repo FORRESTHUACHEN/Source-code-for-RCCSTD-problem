@@ -1,0 +1,267 @@
+The main function
+//
+using namespace std;
+using namespace cv;
+int main()
+{
+	prepoccessedRCCSTDProblem p1;
+	string path1 = "D:\\Forrest_chen_documents\\My papers\\Thrid paper\\Personal Data\\Test6\\";
+/*	char * path = new char[path1.length() + 1];
+	for (int i = 0; i < 17; i++)
+	{
+		strcpy(path, path1.c_str());
+		std::stringstream  s1;
+		s1<<i+1;
+		string filenumber1 = s1.str();
+		char * filenumber = new char[filenumber1.length() + 1];
+		strcpy(filenumber, filenumber1.c_str());
+		//cout << path1;
+		strcat(path,filenumber);
+		strcat(path,"\\");*/
+		p1.readImageSet(path1);
+		p1.classify(path1);
+	//}
+	
+	
+	//waitKey(0);
+	getchar();
+	return 0;
+}
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------------------
+prepoccessedRCCSTDProblem.h
+
+
+#pragma once
+#include <opencv2\opencv.hpp>
+#include <opencv2\imgproc\imgproc.hpp>
+//#include <vector>
+using namespace cv;
+class prepoccessedRCCSTDProblem
+{
+private:
+	
+public:
+	void readImageSet(String address);
+	int signal[187][183];
+	vector<vector<int> > classifyResult;
+	Mat orignalImage_[187];
+	void classify(String address);
+	prepoccessedRCCSTDProblem();
+	~prepoccessedRCCSTDProblem();
+};
+
+----------------------------------------------------------------------------------------------------------------------------------
+prepoccessedRCCSTDProblem.cpp
+
+
+#include "stdafx.h"
+#include "prepoccessedRCCSTDProblem.h"
+#include <String>
+#include <algorithm> 
+#include <vector>
+#include <stdio.h>
+#include <stdlib.h>
+#include <highgui.h>
+#include <math.h>
+#include <iomanip>
+#include <set>
+using namespace std;
+using namespace cv;
+int intialClusteringCentralIndex[11];
+prepoccessedRCCSTDProblem::prepoccessedRCCSTDProblem()
+{
+	classifyResult.resize(11);
+}
+void prepoccessedRCCSTDProblem::readImageSet(String address)
+{  
+	String path;
+	for (int i = 0; i < 187; i++)
+	{
+		for (int j = 0; j < 182; j++)
+			signal[i][j] = 0;
+	}
+	FILE* signalResult;
+	char * preadd = new char[address.length() + 1];
+	strcpy(preadd, address.c_str());
+	//const char* preadd = address.data();
+	cout << preadd << endl;
+	signalResult = fopen(strcat(preadd,"signalResult.txt"), "wb");
+	int beginLine, endLine;
+	memset(intialClusteringCentralIndex, 0, 10);
+	int counter = 0;
+	for (int i = 0; i < 187; i++)
+	{
+		beginLine ,endLine ;
+		bool startFlag, endFlag;
+		path = address;
+		char fragmentNumber[4],flag[1];
+		sprintf(fragmentNumber,"%03d",i);
+		path = path + fragmentNumber + ".bmp";
+		//cout << path << endl;
+		Mat tempImage = imread(path);
+		cvtColor(tempImage, orignalImage_[i], CV_BGR2GRAY);
+		for (int j = 0; j < 180; j++)
+		{
+			for (int k = 0; k < 72; k++)
+			{
+				if (orignalImage_[i].at<uchar>(j, k) < 255)
+					orignalImage_[i].at<uchar>(j, k) = 0;
+				else
+					orignalImage_[i].at<uchar>(j, k) = 255;
+				//cout << path << endl;
+				signal[i][j] = signal[i][j] + orignalImage_[i].at<uchar>(j, k);
+			}
+
+			signal[i][j] = signal[i][j] / 255;
+			fprintf(signalResult, "%d\t", signal[i][j]);
+		}
+		for (int j = 0; j < 50; j++)
+		{
+			beginLine = 0;
+			startFlag = true;
+			for (int k = 0; k < 180; k++)
+			{
+				beginLine = beginLine + orignalImage_[i].at<uchar>(k,j);
+			}
+			if (beginLine / 255 < 180)
+				startFlag = !startFlag;
+			if (!startFlag)
+			{
+				signal[i][180] = j+1;
+				fprintf(signalResult, "%d\t", signal[i][180]);
+				if (j > 20)
+				{
+					intialClusteringCentralIndex[counter] = i;
+					cout << intialClusteringCentralIndex[counter] << endl;
+					counter++;
+				}
+				break;
+			}
+		}
+		fprintf(signalResult, "\r\n");
+	}
+	fclose(signalResult);
+
+	//cv::imshow(" ", orignalImage_[0]);
+	//cv::waitKey(0);
+}
+
+void prepoccessedRCCSTDProblem::classify(String address)
+{
+	
+	//cout << "sdsdsd" << endl;
+	vector<vector<int> > preClassifyResult;
+	preClassifyResult.resize(11);
+	preClassifyResult = classifyResult;
+	/*Take me some time to thinking*/
+	/*-----------------------------------------------------------------------------------------------------------*/
+	double clusteringVectorCenter[11][180] = { 0 };
+	for (int i = 0; i < 11; i++)
+	{
+		for (int j = 0; j < 180;j++)
+		clusteringVectorCenter[i][j] = (signal[intialClusteringCentralIndex[i]][j]);
+	}
+	
+	int count;
+	int origianlIndex[187];
+	for (int i = 0; i < 187; i++)
+	{
+		origianlIndex[i] = i;
+		
+	}
+
+	vector<int> classifyIndex(220);
+	set_symmetric_difference(begin(intialClusteringCentralIndex), end(intialClusteringCentralIndex), begin(origianlIndex), end(origianlIndex), classifyIndex.begin());
+	//auto iter=set_difference(origianlIndex, origianlIndex+184, intialClusteringCentralIndex, intialClusteringCentralIndex+10, classifyIndex.begin());
+	int count2 = 1;
+	do
+	{
+		
+		count = 0;
+		preClassifyResult.clear();
+		preClassifyResult.resize(11);
+		preClassifyResult = classifyResult;
+		//cout << "sdsdsd" << endl;
+		classifyResult.clear();
+		classifyResult.resize(11);
+		for (int i = 0; i < 11; i++)
+		{
+			classifyResult[i].push_back(intialClusteringCentralIndex[i]);
+		}
+		vector<int> Distance(11, 0);
+/*****************Clusering the fragments**********************************/
+		for (int t = 0;t<176; t++)
+		{
+			int j = 0;
+			for (int i = 0; i < 11; i++)
+			{
+				int tempDistance = 0;
+				for (int k = 0; k < 180; k++)
+				{
+					tempDistance = tempDistance + (signal[classifyIndex[t]][k] - clusteringVectorCenter[i][k])*(signal[classifyIndex[t]][k] - clusteringVectorCenter[i][k]);
+				}
+				Distance[j] = sqrt(tempDistance);
+				j++;
+			}
+			vector<int>::iterator smallest = min_element(std::begin(Distance), std::end(Distance));
+			classifyResult[std::distance(std::begin(Distance), smallest)].push_back(classifyIndex[t]);
+		}
+/****Before Recalculating the Clusering vector Centar, Reset is needed*********/
+		for (int i = 0; i < 11 ; i++)
+		for (int j = 0; j < 180; j++)
+		{
+			clusteringVectorCenter[i][j] = 0;
+		}
+/*****************Recalculate the Clusering Vector Centar*********************/
+		for (int i = 0; i < 11; i++)
+		{
+			for (int t = 0; t < 180; t++)
+			{
+				for (int j = 0; j < classifyResult[i].size(); j++)
+				{
+					clusteringVectorCenter[i][t] = clusteringVectorCenter[i][t] + signal[classifyResult[i][j]][t];
+				}
+				clusteringVectorCenter[i][t] = clusteringVectorCenter[i][t] / classifyResult[i].size();
+			}
+		}
+/*************************************************************************************/
+/*************************************************************************************
+**************************************************************************************/
+		for (int i = 0; i < 11; i++)
+		{
+			if (classifyResult[i] != preClassifyResult[i])
+				count++;
+			//if ()
+		}
+		cout <<"count: "<< count << endl;
+		count2++;
+	} while (count!=0||count2<13);
+/*****************K-means Algorithm End*********************************/
+
+/**************************************************************************************************/
+	FILE* classifyResult_txt;
+	char * preadd = new char[address.length() + 1];
+	strcpy(preadd, address.c_str());
+	//const char* preadd = address.data();
+	cout << preadd << endl;
+	classifyResult_txt = fopen(strcat(preadd, "classifyResult.txt"), "wb");
+	for (int i = 0; i < 11; i++)
+	{
+		for (int j = 0; j < classifyResult[i].size(); j++)
+		{
+			cout << classifyResult[i][j] << " ";
+			fprintf(classifyResult_txt, "%d\t", classifyResult[i][j]);
+		}
+		fprintf(classifyResult_txt,"num: %d\t", classifyResult[i].size());
+		cout << "num: " << classifyResult[i].size() << endl;
+		fprintf(classifyResult_txt, "\r\n");
+	}
+	fclose(classifyResult_txt);
+}
+prepoccessedRCCSTDProblem::~prepoccessedRCCSTDProblem()
+{
+}
