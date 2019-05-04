@@ -1,1 +1,11 @@
 Due to my mistakes, I missed my Test 4, Test 5, Test 14, Test 15, Test 18 in the original test data. I am really sorry. 
+
+
+Here is the test data of our project. As you can see, there are hundreds of fragments, a big image which is the original document's image,
+A document named  'classifyResult.txt' is the clustering result based on our clustering algorithm.
+A document named  'classifyResultbykmeas.txt' is the clustering result based on Kean's algorithm. 
+A document named  'classifyResultbyXu.txt' is the clustering result based on Xu et al. 2014 's algorithm. 
+
+A document named  'signalResult.txt' is the unidimensional vector which was mentioned in our paper and the 181'st column of each row is the flag to represent this fragment is the first fragment in a row or not. If the value of that column is equal to '1' means that that fragment not the first fragments and can't be used as the initial clustering centers, If not, it means that fragment is one of the fragments and can be used as clustering centers.
+
+Just as you can see, data 6 - data 15 are the test data with just one document and data 16- data 24 are the test data with two mixed documents(Unfortunately, I last one two mixed documents data in the last one year or more time).
